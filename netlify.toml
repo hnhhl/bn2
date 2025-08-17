@@ -1,0 +1,28 @@
+[images]
+  remote_images = ["https://source.unsplash.com/.*", "https://images.unsplash.com/.*", "https://ext.same-assets.com/.*", "https://ugc.same-assets.com/.*"]
+
+[build]
+  command = "bun install && bun run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NEXT_FORCE_CACHE_CLEAR = "true"
+  NETLIFY_NEXT_PLUGIN_LOGGING = "verbose"
+  # Prevent build cache issues
+  NETLIFY_SKIP_EDGE_FUNCTIONS_CACHE = "true"
+  # Add environment variables for build-time access
+  NEXT_PUBLIC_SUPABASE_URL = "placeholder"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "placeholder"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Prevent caching issues during development
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
