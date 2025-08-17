@@ -14,17 +14,13 @@ import {
   StopCircle,
   Download,
   Search,
-  BookOpen,
   TrendingUp,
   Settings,
   Database,
   RefreshCw,
   CheckCircle,
   AlertCircle,
-  Clock,
-  Bug,
-  Wifi,
-  WifiOff
+  Clock
 } from 'lucide-react';
 
 interface Category {
@@ -191,71 +187,7 @@ export default function Dashboard() {
     }
   }, [linksFilter]);
 
-  const testConnection = async (useProxy: boolean = false) => {
-    setIsTesting(true);
-    addLog(`🧪 Testing connection ${useProxy ? 'WITH' : 'WITHOUT'} proxy...`);
 
-    try {
-      const response = await fetch(`/api/test?proxy=${useProxy}`);
-      const result = await response.json();
-
-      if (result.success) {
-        addLog(`✅ Connection test successful!`);
-        addLog(`📊 Status: ${result.data.status}, Content: ${result.data.contentLength} chars`);
-        addLog(`🔒 Blocked: ${result.data.isBlocked ? 'YES' : 'NO'}`);
-        addLog(`🔗 Sample links found: ${result.data.sampleLinks.length}`);
-
-        result.data.sampleLinks.forEach((link: any) => {
-          addLog(`   📄 ${link.text} -> ${link.url}`);
-        });
-
-        setDebugInfo(result.data);
-      } else {
-        addLog(`❌ Connection test failed: ${result.error}`);
-        addLog(`🔍 Details: ${JSON.stringify(result.details)}`);
-        setDebugInfo(result);
-      }
-    } catch (error) {
-      addLog(`❌ Test error: ${error}`);
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const testProductExtraction = async () => {
-    setIsTesting(true);
-    addLog('🛍️ Testing product data extraction...');
-
-    try {
-      const response = await fetch('/api/test-product');
-      const result = await response.json();
-
-      if (result.success) {
-        addLog(`✅ Product extraction successful!`);
-        addLog(`📖 Title: ${result.data.title}`);
-        addLog(`📘 ISBN: ${result.data.isbn || 'N/A'}`);
-        addLog(`💰 Price: ${result.data.price || 'N/A'}`);
-        addLog(`💵 Original Price: ${result.data.original_price || 'N/A'}`);
-        addLog(`📦 In Stock: ${result.data.in_stock ? 'YES' : 'NO'}`);
-        addLog(`🔗 URL: ${result.data.product_url}`);
-
-        setDebugInfo({
-          ...debugInfo,
-          productTest: result.data
-        });
-      } else {
-        addLog(`❌ Product extraction failed: ${result.error}`);
-        setDebugInfo({
-          ...debugInfo,
-          productTestError: result
-        });
-      }
-    } catch (error) {
-      addLog(`❌ Product test error: ${error}`);
-    } finally {
-      setIsTesting(false);
-    }
-  };
 
   const testHealthCheck = async () => {
     setIsTesting(true);
@@ -760,15 +692,15 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Debug Panel */}
-      <Card className="border-yellow-200 bg-yellow-50">
+      {/* API Health Check */}
+      <Card className="border-green-200 bg-green-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bug className="w-5 h-5" />
-            Debug & Connection Test
+            <CheckCircle className="w-5 h-5" />
+            API Health Check
           </CardTitle>
           <CardDescription>
-            Test kết nối trước khi crawl để kiểm tra proxy và blocking issues
+            Kiểm tra trạng thái API và kết nối database
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -785,42 +717,6 @@ export default function Dashboard() {
                 <CheckCircle className="w-4 h-4 mr-2" />
               )}
               Test API Health
-            </Button>
-            <Button
-              onClick={() => testConnection(false)}
-              disabled={isTesting}
-              variant="outline"
-            >
-              {isTesting ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <WifiOff className="w-4 h-4 mr-2" />
-              )}
-              Test Direct
-            </Button>
-            <Button
-              onClick={() => testConnection(true)}
-              disabled={isTesting}
-              variant="outline"
-            >
-              {isTesting ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Wifi className="w-4 h-4 mr-2" />
-              )}
-              Test với Proxy
-            </Button>
-            <Button
-              onClick={testProductExtraction}
-              disabled={isTesting}
-              variant="outline"
-            >
-              {isTesting ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <BookOpen className="w-4 h-4 mr-2" />
-              )}
-              Test Product
             </Button>
           </div>
 
