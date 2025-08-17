@@ -211,7 +211,7 @@ export const productService = {
       if (error) throw error;
 
       // Map to match the expected format
-      return (data || []).map(item => ({
+      return (data || []).map((item: any) => ({
         ...item,
         category_name: item.categories?.name
       }));
@@ -232,7 +232,7 @@ export const productService = {
       if (error) throw error;
 
       // Map to match the expected format
-      return (data || []).map(item => ({
+      return (data || []).map((item: any) => ({
         ...item,
         category_name: item.categories?.name
       }));
@@ -301,7 +301,7 @@ export const productLinkService = {
       if (error) throw error;
 
       // Map to match the expected format
-      return (data || []).map(item => ({
+      return (data || []).map((item: any) => ({
         ...item,
         category_name: item.categories?.name
       }));
