@@ -412,7 +412,7 @@ export async function getProducts(filters: any = {}, pagination: { page?: number
   if (error) throw error;
 
   // Map to match the expected format
-  return (data || []).map(item => ({
+  return (data || []).map((item: any) => ({
     ...item,
     category_name: item.categories?.name
   }));
@@ -463,7 +463,7 @@ export async function getProductLinks(filters: any = {}, pagination: { page?: nu
   if (error) throw error;
 
   // Map to match the expected format
-  return (data || []).map(item => ({
+  return (data || []).map((item: any) => ({
     ...item,
     category_name: item.categories?.name
   }));
