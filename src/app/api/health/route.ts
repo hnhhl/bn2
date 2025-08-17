@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
-import { initDatabase } from '@/lib/database-supabase';
 import { isBuildMode, logBuildMode } from '@/lib/build-utils';
+
+// Force this API route to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('health');
       return NextResponse.json({
@@ -18,6 +21,9 @@ export async function GET() {
         buildMode: true
       });
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const { initDatabase } = await import('@/lib/database-supabase');
 
     // Test Supabase connection
     const db = initDatabase();

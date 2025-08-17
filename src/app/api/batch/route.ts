@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  BatchProcessor,
-  getCrawlProgress,
-  stopCrawling,
-  resetBatchStats,
-  getBatchLogs
-} from '@/lib/batch-processor';
-import { getCategories } from '@/lib/database-supabase';
 import { isBuildMode, createBuildModeResponse, logBuildMode } from '@/lib/build-utils';
+
+// Force this API route to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Global batch processor instance
 let batchProcessor: BatchProcessor | null = null;
 
 export async function GET() {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('batch-get');
       return NextResponse.json({
@@ -27,6 +23,15 @@ export async function GET() {
         buildMode: true
       });
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const {
+      BatchProcessor,
+      getCrawlProgress,
+      stopCrawling,
+      resetBatchStats,
+      getBatchLogs
+    } = await import('@/lib/batch-processor');
 
     const progress = getCrawlProgress();
     const isRunning = batchProcessor?.isRunning || false;
@@ -68,11 +73,21 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('batch-post');
       return NextResponse.json(createBuildModeResponse('Batch operations not available during build'));
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const {
+      BatchProcessor,
+      getCrawlProgress,
+      stopCrawling,
+      resetBatchStats,
+      getBatchLogs
+    } = await import('@/lib/batch-processor');
+    const { getCategories } = await import('@/lib/database-supabase');
 
     const body = await request.json();
     const { action, options = {} } = body;

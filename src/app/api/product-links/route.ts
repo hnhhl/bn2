@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getProductLinks,
-  getProductLinksStats,
-  getCategories
-} from '@/lib/database-supabase';
 import { isBuildMode, createBuildModeResponse, logBuildMode } from '@/lib/build-utils';
+
+// Force this API route to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('product-links');
       return NextResponse.json({
@@ -21,6 +20,13 @@ export async function GET(request: NextRequest) {
         buildMode: true
       });
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const {
+      getProductLinks,
+      getProductLinksStats,
+      getCategories
+    } = await import('@/lib/database-supabase');
 
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
@@ -86,11 +92,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('product-links-post');
       return NextResponse.json(createBuildModeResponse('Export not available during build'));
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const {
+      getProductLinks,
+      getProductLinksStats,
+      getCategories
+    } = await import('@/lib/database-supabase');
 
     const body = await request.json();
     const { action, categoryId } = body;

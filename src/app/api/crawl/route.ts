@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ProxyManager } from '@/lib/proxy-manager';
-import { BarnesNobleScraper } from '@/lib/scraper';
-import {
-  getCategoryById,
-  getProductLinks,
-  createProduct,
-  createProductLink,
-  updateProductLink,
-  updateCategoryStatus
-} from '@/lib/database-supabase';
 import { isBuildMode, createBuildModeResponse, logBuildMode } from '@/lib/build-utils';
+
+// Force this API route to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Simple in-memory log buffer for crawl session
 const LOG_BUFFER_SIZE = 500;
@@ -33,7 +27,7 @@ let crawlState = {
 
 export async function GET() {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('crawl-get');
       return NextResponse.json({
@@ -46,6 +40,18 @@ export async function GET() {
         buildMode: true
       });
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const { ProxyManager } = await import('@/lib/proxy-manager');
+    const { BarnesNobleScraper } = await import('@/lib/scraper');
+    const {
+      getCategoryById,
+      getProductLinks,
+      createProduct,
+      createProductLink,
+      updateProductLink,
+      updateCategoryStatus
+    } = await import('@/lib/database-supabase');
 
     return NextResponse.json({
       success: true,
@@ -83,11 +89,23 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('crawl-post');
       return NextResponse.json(createBuildModeResponse('Crawl operations not available during build'));
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const { ProxyManager } = await import('@/lib/proxy-manager');
+    const { BarnesNobleScraper } = await import('@/lib/scraper');
+    const {
+      getCategoryById,
+      getProductLinks,
+      createProduct,
+      createProductLink,
+      updateProductLink,
+      updateCategoryStatus
+    } = await import('@/lib/database-supabase');
 
     const body = await request.json();
     const { action, categoryId, options = {} } = body;

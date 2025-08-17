@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { categoryService } from '@/lib/database-supabase';
 import { isBuildMode, createBuildModeResponse, logBuildMode } from '@/lib/build-utils';
+
+// Force this API route to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    // Check for build mode
+    // Early build mode check - before any imports
     if (isBuildMode()) {
       logBuildMode('categories');
       return NextResponse.json(createBuildModeResponse('Categories not available during build'));
     }
+
+    // Lazy import heavy dependencies only in runtime
+    const { categoryService } = await import('@/lib/database-supabase');
 
     const categories = await categoryService.getAll().all();
     return NextResponse.json({ success: true, data: categories });
