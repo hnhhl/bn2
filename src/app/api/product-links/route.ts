@@ -4,9 +4,24 @@ import {
   getProductLinksStats,
   getCategories
 } from '@/lib/database-supabase';
+import { isBuildMode, createBuildModeResponse, logBuildMode } from '@/lib/build-utils';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check for build mode
+    if (isBuildMode()) {
+      logBuildMode('product-links');
+      return NextResponse.json({
+        success: true,
+        data: {
+          links: [],
+          stats: { total: 0, crawled: 0, uncrawled: 0, byCategory: {} },
+          pagination: { page: 1, limit: 100, total: 0 }
+        },
+        buildMode: true
+      });
+    }
+
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
     const crawled = searchParams.get('crawled');
@@ -44,8 +59,24 @@ export async function GET(request: NextRequest) {
         }
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to get product links:', error);
+
+    // Fallback to build mode response on error
+    if (isBuildMode()) {
+      logBuildMode('product-links-error');
+      return NextResponse.json({
+        success: true,
+        data: {
+          links: [],
+          stats: { total: 0, crawled: 0, uncrawled: 0, byCategory: {} },
+          pagination: { page: 1, limit: 100, total: 0 }
+        },
+        buildMode: true,
+        error: 'Product links error in build mode'
+      });
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Failed to get product links'
@@ -55,6 +86,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check for build mode
+    if (isBuildMode()) {
+      logBuildMode('product-links-post');
+      return NextResponse.json(createBuildModeResponse('Export not available during build'));
+    }
+
     const body = await request.json();
     const { action, categoryId } = body;
 
@@ -99,8 +136,15 @@ export async function POST(request: NextRequest) {
       success: false,
       error: `Unknown action: ${action}`
     }, { status: 400 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Product links API error:', error);
+
+    // Fallback to build mode response on error
+    if (isBuildMode()) {
+      logBuildMode('product-links-post-error');
+      return NextResponse.json(createBuildModeResponse('Export error in build mode'));
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Internal server error'

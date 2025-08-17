@@ -7,12 +7,27 @@ import {
   getBatchLogs
 } from '@/lib/batch-processor';
 import { getCategories } from '@/lib/database-supabase';
+import { isBuildMode, createBuildModeResponse, logBuildMode } from '@/lib/build-utils';
 
 // Global batch processor instance
 let batchProcessor: BatchProcessor | null = null;
 
 export async function GET() {
   try {
+    // Check for build mode
+    if (isBuildMode()) {
+      logBuildMode('batch-get');
+      return NextResponse.json({
+        success: true,
+        data: {
+          isRunning: false,
+          progress: null,
+          logs: []
+        },
+        buildMode: true
+      });
+    }
+
     const progress = getCrawlProgress();
     const isRunning = batchProcessor?.isRunning || false;
     const logs = getBatchLogs();
@@ -26,8 +41,24 @@ export async function GET() {
         logs
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to get batch status:', error);
+
+    // Fallback to build mode response on error
+    if (isBuildMode()) {
+      logBuildMode('batch-get-error');
+      return NextResponse.json({
+        success: true,
+        data: {
+          isRunning: false,
+          progress: null,
+          logs: []
+        },
+        buildMode: true,
+        error: 'Batch status error in build mode'
+      });
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Failed to get batch status'
@@ -37,6 +68,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check for build mode
+    if (isBuildMode()) {
+      logBuildMode('batch-post');
+      return NextResponse.json(createBuildModeResponse('Batch operations not available during build'));
+    }
+
     const body = await request.json();
     const { action, options = {} } = body;
 
@@ -154,8 +191,15 @@ export async function POST(request: NextRequest) {
           error: `Unknown action: ${action}`
         }, { status: 400 });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Batch API error:', error);
+
+    // Fallback to build mode response on error
+    if (isBuildMode()) {
+      logBuildMode('batch-post-error');
+      return NextResponse.json(createBuildModeResponse('Batch operation error in build mode'));
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Internal server error',

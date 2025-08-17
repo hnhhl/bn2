@@ -9,6 +9,7 @@ import {
   updateProductLink,
   updateCategoryStatus
 } from '@/lib/database-supabase';
+import { isBuildMode, createBuildModeResponse, logBuildMode } from '@/lib/build-utils';
 
 // Simple in-memory log buffer for crawl session
 const LOG_BUFFER_SIZE = 500;
@@ -32,6 +33,20 @@ let crawlState = {
 
 export async function GET() {
   try {
+    // Check for build mode
+    if (isBuildMode()) {
+      logBuildMode('crawl-get');
+      return NextResponse.json({
+        success: true,
+        data: {
+          isRunning: false,
+          progress: null,
+          logs: []
+        },
+        buildMode: true
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -41,8 +56,24 @@ export async function GET() {
         logs: logBuffer.slice(-200)
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to get crawl status:', error);
+
+    // Fallback to build mode response on error
+    if (isBuildMode()) {
+      logBuildMode('crawl-get-error');
+      return NextResponse.json({
+        success: true,
+        data: {
+          isRunning: false,
+          progress: null,
+          logs: []
+        },
+        buildMode: true,
+        error: 'Crawl status error in build mode'
+      });
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Failed to get crawl status'
@@ -52,6 +83,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check for build mode
+    if (isBuildMode()) {
+      logBuildMode('crawl-post');
+      return NextResponse.json(createBuildModeResponse('Crawl operations not available during build'));
+    }
+
     const body = await request.json();
     const { action, categoryId, options = {} } = body;
 
@@ -138,6 +175,13 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Crawl API error:', error);
     pushLog(`❌ Crawl API error: ${error?.message || error}`);
+
+    // Fallback to build mode response on error
+    if (isBuildMode()) {
+      logBuildMode('crawl-post-error');
+      return NextResponse.json(createBuildModeResponse('Crawl operation error in build mode'));
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Internal server error',
